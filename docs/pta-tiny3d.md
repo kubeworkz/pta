@@ -401,9 +401,9 @@ if __name__ == "__main__":
 ### Important Architectural Notes
 
 - **Bias Cancellation in Differential Detection:** Because each positive rail targets$T^+ = b + \frac{1}{2}W$ and each negative rail targets $T^- = b - \frac{1}{2}W$, subtracting the two photocurrents $(I^+ - I^-)$ automatically cancels the constant bias $b \sum x_j$, leaving pure signed dot-products $\sum W_{ij} x_j$ without requiring negative optical power.
-- **Coherent vs. Incoherent WDM Inputs:** In the circuit script above, summing $\vert{}S_{ij}\vert{}^2$ assumes mutually incoherent laser lines (e.g., independent DFB lasers per input lane) so optical intensities add linearly without interference beating. If you drive all N lanes from a single **phase-locked frequency comb**, replace the intensity sum with coherent field summation $$ and optimize complex field amplitudes$S_{ij}$ rather than power targets$\vert{}S_{ij}\vert{}^2$ in Stage 1.
+- **Coherent vs. Incoherent WDM Inputs:** In the circuit script above, summing $\vert{}S_{ij}\vert{}^2$ assumes mutually incoherent laser lines (e.g., independent DFB lasers per input lane) so optical intensities add linearly without interference beating. If you drive all N lanes from a single **phase-locked frequency comb**, replace the intensity sum with coherent field summation $(\vert{}\sum_jS_{ij}\vert{}^2)$ and optimize complex field amplitudes$S_{ij}$ rather than power targets$\vert{}S_{ij}\vert{}^2$ in Stage 1.
 
-Would you like to refine any specific piece of this pipeline next, such as:
+Refining the following pipeline items:
 
 - **Switching Stage 1 & 2 to coherent frequency-comb operation** (optimizing complex field transmission S_ij instead of incoherent optical power)
 - **Adding parametric AWG / microring WDM mux/demux geometry** so the generated GDSII layout includes physical wavelength routing structures
@@ -413,7 +413,7 @@ Would you like to refine any specific piece of this pipeline next, such as:
 
 Switching to **coherent frequency-comb operation** changes the physics of our accelerator in two key ways:
 
-1. **Field-Domain Interference (Amplitude & Phase):** Because all N input lanes share a single phase-locked Kerr or EO frequency comb, optical fields sum **coherently** $$ inside the freeform core before square-law photodetection.
+1. **Field-Domain Interference (Amplitude & Phase):** Because all N input lanes share a single phase-locked Kerr or EO frequency comb, optical fields sum **coherently** $(\sum_jS_{ij} E_j)$ inside the freeform core before square-law photodetection.
 2. **Signed Input Vectors** $(x_j \in [-1, 1])$**:** Coherent operation lets you encode **signed** inputs directly into the optical field phase using a push-pull TFLN Mach-Zehnder modulator biased at the null point $(E_{\text{out}} = E_{\text{in}} \sin(\frac{\pi V}{2 V_\pi}))$, eliminating the need for a DC bias offset on the input vector.
 3. **Homodyne / Balanced Local Oscillator (LO) Detection:** To recover signed outputs $(y_i = \text{Re}\{E_{\text{sig}, i} E_{\text{LO}, i}^*\})$ at the photodetectors, a phase-locked comb reference line (Local Oscillator) is mixed with each output port via a 2 × 2 3 dB directional coupler into a balanced photodiode pair.
 
@@ -1846,7 +1846,7 @@ if __name__ == "__main__":
 
 ---
 
-Below is a clean, modular Python project structure packaging our entire **Tidy3D + PhotonForge** hybrid TFLN-on-SiN coherent frequency-comb tensor accelerator pipeline—from adjoint inverse design and DRC-filtered GDS polygon export through 3D FDTD verification, full-chip circuit/layout assembly, and TOPS/W system modeling.
+Below is a clean, modular Python project structure packaging our entire **Tidy3D + PhotonForge** hybrid TFLN-on-SiN coherent frequency-comb tensor accelerator pipeline - from adjoint inverse design and DRC-filtered GDS polygon export through 3D FDTD verification, full-chip circuit/layout assembly, and TOPS/W system modeling.
 
 ---
 
@@ -2835,7 +2835,7 @@ pytest -v tests/
 
 ---
 
-Adding a **Pareto frontier sweep script (**`sweep_pareto.py`**)** lets you identify the optimal hardware operating point—balancing **energy efficiency (TOPS/W)** against **bit precision (ENOB)**—across matrix dimension N, WDM comb count K, and per-line laser power before committing to a final tapeout reticle.
+Adding a **Pareto frontier sweep script (**`sweep_pareto.py`**)** lets you identify the optimal hardware operating point—balancing **energy efficiency (TOPS/W)** against **bit precision (ENOB)** - across matrix dimension N, WDM comb count K, and per-line laser power before committing to a final tapeout reticle.
 
 ### Why a Pareto Sweep Matters Physically
 
@@ -3018,14 +3018,14 @@ if __name__ == "__main__":
 python sweep_pareto.py
 ```
 
-- **Sweet Spot for AI Inference:** You will typically see **N = 16 or N = 32** with **K = 8 or 16 comb lines** at **~1.5–4 mW per comb line** land right on the Pareto knee—delivering **> 6.5 bits ENOB** (ideal for INT8/FP8 quantized weights) at **20–45 TOPS/W** total wall-plug efficiency.
+- **Sweet Spot for AI Inference:** You will typically see **N = 16 or N = 32** with **K = 8 or 16 comb lines** at **~1.5–4 mW per comb line** land right on the Pareto knee - delivering **> 6.5 bits ENOB** (ideal for INT8/FP8 quantized weights) at **20–45 TOPS/W** total wall-plug efficiency.
 - **Checking our Current Prototype:**
 
   Look at the `4x4` cluster on the plot to see how much extra optical power or TIA noise reduction is needed on your first test chip to hit your target inference bit-width before scaling the reticle to `16x16`.
 
 ---
 
-Our end-to-end **Tidy3D + PhotonForge** repository is now complete—covering inverse design, DRC-filtered GDS export, 3D FDTD re-import verification, full-chip layout, CI unit tests, and Pareto optimization.
+Our end-to-end **Tidy3D + PhotonForge** repository is now complete - covering inverse design, DRC-filtered GDS export, 3D FDTD re-import verification, full-chip layout, CI unit tests, and Pareto optimization.
 
 ---
 
@@ -3250,7 +3250,7 @@ def compute_tfln_vpi_l_tidy3d(
 
 ### How to Wire These Into Our Pipeline
 
-1. **Swap PDK Layers:** Instantiate `pdk = FoundryPDKProfile(...)` with your foundry's exact GDS layer table (e.g., AIM Photonics, Ligentec, or HyperLight/CSEM) and pass `pdk.sin_waveguide`, `pdk.tfln_bonded_mesa`, `pdk.tin_heater`, and `pdk.rf_electrode_m1` into `AcceleratorConfig`. Also place `pdk.drc_exclude_box` over your `FREEFORM_CORE_LAYOUT` bounding box so automated foundry CMP dummy-fill scripts do not drop metal/nitride tiles inside your inverse-designed scatterer.
+1. **Swap PDK Layers:** Instantiate `pdk = FoundryPDKProfile(...)` with our foundry's exact GDS layer table (e.g., AIM Photonics, Ligentec, or HyperLight/CSEM) and pass `pdk.sin_waveguide`, `pdk.tfln_bonded_mesa`, `pdk.tin_heater`, and `pdk.rf_electrode_m1` into `AcceleratorConfig`. Also place `pdk.drc_exclude_box` over your `FREEFORM_CORE_LAYOUT` bounding box so automated foundry CMP dummy-fill scripts do not drop metal/nitride tiles inside your inverse-designed scatterer.
 2. **Load Your Real Model Layer:** In `stage1_inverse_design.py`, replace `cfg.generate_target_matrices()` with:
 
 ```python
