@@ -98,3 +98,9 @@ frequency axis before fitting so the ~1e15 Hz values do not lose precision.
 If steps 2–3 fail, do not import a full-core result: the reciprocal reconstruction would be
 built on a wrong direction or scale. If they pass, the same `out_*` extraction can be used
 for the four core verification runs.
+
+To reproduce the normalization and the group index, `notebooks/mode_monitor_normalization.ipynb`
+runs one slab simulation with a 2.0 µm and an 8.0 µm `ModeMonitor` on the same plane: it returns
+the 8.0 µm forward power above, 0.797 for the 2.0 µm monitor, and `n_g = 2.186` from the same
+data. The 2.0 µm number is layout-dependent — ≈0.83 on the full-core slab, 0.80 here — because
+the monitor counts only the field inside its own window.
