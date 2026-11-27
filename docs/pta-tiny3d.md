@@ -1,3 +1,11 @@
+**Implementation status:** this is the original two-stage design sketch. The chain built in this
+repository uses `tidy3d.plugins.invdes.InverseDesignMulti` (one simulation per comb line and
+input port) with a phase- and gain-invariant overlap objective under a conic filter, beta
+schedule and erosion/dilation penalty; see `README.md` and `docs/implementation-plan.md`.
+`tidy3d.plugins.adjoint` and its `ConicFilter`/`RampProjection` helpers, used throughout the
+scripts below, were removed in Tidy3D 2.x, and the Stage 1 complex-field MSE is not what the
+implemented runner optimises.
+
 Below is a complete **end-to-end two-stage pipeline** combining physical inverse design in **Tidy3D** with full WDM signed-weight circuit simulation in **PhotonForge**.
 
 ## Architecture Overview

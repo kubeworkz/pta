@@ -84,6 +84,33 @@ uses the result's `design_region.eps_bounds`, falling back to the SiO2/SiN value
 `extract_density` also accepts an explicit density array or an `eps_bounds=` override, and
 `import_from_simulation_data` performs the whole import.
 
+## Tidy3D inverse-design chain
+
+`run_design_submit_v8.py` is the runner: it builds and validates the adjoint problem,
+optimises the freeform mask, exports the mask as GDS and `SimulationData`, re-runs the four
+verification simulations, then calls `pta import-em` and `pta all --core`.
+
+The installed `tidy3d` 2.12 accepts only one frequency per inverse-design metric and rejects
+a source-free design simulation, so the comb is an `InverseDesignMulti`: **one simulation
+per comb line and input port**, each with its own mode source at that line's frequency and
+`out_*` monitors sampled at that line only. One optimiser step updates the density every
+simulation shares.
+
+The objective is the phase- and gain-invariant overlap `|<g, t>|² / (‖g‖²‖t‖²)` with
+`g = α·W[k][:, i]·e^{iφ_ref[k]}`, minus a throughput shortfall. That is the quantity the
+receiver can actually see: verification fits a pilot gain and per-lane phases before it
+scores the kernel. The design region carries the conic filter
+(`radius = drc_min_feature = 0.14 µm`) and tanh projection with the advertised beta schedule
+(`2.0·1.08^step`, one beta per step), plus an erosion/dilation penalty at the 0.14 µm
+freeform scale so the mask is binarised while it is optimised. Every port is seeded with a
+0.4 µm landing so the mask stays connected within the 0.6 µm ingested-core limit.
+
+```bash
+PTA_STEPS=4 python run_design_submit_v8.py        # epoch count (default 1)
+PTA_ESTIMATE_ONLY=1 python run_design_submit_v8.py   # cost estimate, no solve
+PTA_RESUME=1 PTA_START_STEP=4 PTA_STEPS=36 python run_design_submit_v8.py   # continue the schedule
+```
+
 Before the full-core solve, upload `tidy3d/tidy3d_validate_straight.json` and work through
 [`docs/tidy3d-validation.md`](docs/tidy3d-validation.md): a straight guide must show a
 forward amplitude near 1, a weak backward direction and a linear phase slope. Run
@@ -102,7 +129,7 @@ forward amplitude near 1, a weak backward direction and a linear phase slope. Ru
 | `drc_core.json`, `drc_chip.json` | PhotonForge | Width, gap, cross-reference spacing, opening and connectivity defects |
 | `verification.json` | — | Per-line ideal vs measured MVM, lane calibration, pass flag |
 | `metrics.json` | — | TOPS, power breakdown, SNR, ENOB |
-| `tidy3d_design_spec.json` | Tidy3D | Adjoint problem: stack, region, grid, targets, objective |
+| `tidy3d_design_spec.json` | Tidy3D | Adjoint problem: stack, region, grid, targets, conic filter + beta schedule, penalty, objective |
 | `tidy3d/tidy3d_verify_in*.json` | Tidy3D | Forward 3D FDTD of the core, one per input port |
 | `tidy3d/tidy3d_validate_straight.json` | Tidy3D | Straight SiN waveguide for the direction/normalization check |
 | `portal_manifest.json`, `README_UPLOAD.md` | both | Upload checklist |
@@ -146,16 +173,19 @@ src/pta/
   drc.py                width, gap, spacing, opening, shorts, connectivity
   verify.py             homodyne reconstruction, calibration, signed MVM
   metrics.py            TOPS, power, SNR, ENOB, Pareto sweep
-  t3d.py                Tidy3D design spec and verification simulators
+  t3d.py                Tidy3D design spec, inverse-design chain, verification sims
+  em_import.py          solved-core import from density + monitor data
   bundle.py, io.py      portal bundle, npz interchange
-  t3d.py, em_import.py  Tidy3D specs and solved-core import
   pipeline.py, cli.py   orchestration and command line
+run_design_submit_v8.py Tidy3D adjoint -> import-em -> four verification runs
 tests/                  config, physics, DRC, pipeline regression tests
 ```
 
 ## Limitations
 
-* The freeform core is an analytic surrogate until the Tidy3D adjoint + verification run.
+* The freeform core is an analytic surrogate until the adjoint converges: the current run has
+  3 of the spec's 40 epochs, and the EM-imported kernel still fails the 2 % MVM gate.
+  `run_design_submit_v8.py` resumes from `artifacts/tidy3d/design_v8_history.hdf5`.
 * DRC is morphological, not the foundry deck; re-run the PDK rules before tapeout.
 * The LO comb is delivered off chip to each hybrid (24 ports); the on-chip 1×N splitter is
   delivered separately because its fan-out cannot be routed crossing-free in this floorplan.

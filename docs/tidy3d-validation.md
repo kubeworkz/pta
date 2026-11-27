@@ -14,9 +14,12 @@ differences are the straight geometry and the fact that only lane 0 is populated
 - `out_0` mode monitor at `x = +10 µm`. It is 20 µm from the source and 0.5 µm before the
   output facet, mirroring the monitor position inside the core output stub.
 - `refl_0` mode monitor 0.4 µm before the source.
-- The same source size and pulse, monitor size, mode spec, comb frequencies and PML
-  boundaries as the core verification specs. The simulation is centred on lane 0, so the
-  guide sits in the middle of the domain.
+- The same source as the core verification specs: size, pulse, mode spec, frequency grid and
+  PML boundaries. The output and reflection monitors are widened to 8.0 µm in y, with the
+  TFLN slab matched to them, because the 2.0 µm per-lane monitors used by the core files
+  clip the guided mode's tails: on an identical guide they read 0.826 where the 8.0 µm
+  monitor reads 0.931. Direction, mode spec, frequency grid and monitor names stay shared.
+  The simulation is centred on lane 0, so the guide sits in the middle of the domain.
 
 The group-index fit needs the **source-to-output-monitor distance**, 20 µm, not the 21 µm
 physical guide length. The checker reads both centres from the `SimulationData`, so there is
@@ -65,10 +68,13 @@ and the group index fitted over the derived source-to-monitor distance.
    the power, the importer's direction convention is wrong — stop and fix it before importing
    a core.
 3. **Absolute normalization.** The forward power `|a|²` is close to 1. Over the 20 µm path
-   the propagation loss is under 0.001 dB, so expect roughly 0.95–1.0 (the exact value
-   depends on the mode overlap at source and monitor and any facet reflection). A value
+   the propagation loss is under 0.001 dB, so expect roughly 0.93–0.95 with these 8.0 µm
+   monitors (measured 0.9304 / 0.9299 / 0.9294 at 1545 / 1550 / 1555 nm); the exact value
+   depends on the mode overlap at source and monitor and on the facet reflection. A value
    near 0.25 or 2 means the portal data needs a source-amplitude or power normalization
-   before it can be used as an S-matrix.
+   before it can be used as an S-matrix. A 2.0 µm monitor on the same guide reads ≈0.83 —
+   that is mode clipping in the monitor plane, not propagation loss, and it is why the core
+   files keep their per-lane monitor width in mind when their columns are compared.
 4. **Reflection monitor.** For `refl_0`, the backward `direction="-"` amplitude is small
    compared with forward — typically around −18 dB from the input facet. Below −10 dB
    confirms which direction label corresponds to back-reflection; a value comparable to
@@ -82,6 +88,8 @@ and the group index fitted over the derived source-to-monitor distance.
    across the three comb lines are.
 6. **Record the numbers.** Keep the forward/backward powers, reflection level and fitted
    group index with the result, then repeat the same checks on a full-core verify result.
+   The current straight result: forward `|a|²` 0.9304 / 0.9299 / 0.9294, backward ≈2.2e-4,
+   reflection ≈2.6e-4 falling to 1.7e-4, `n_g` ≈ 2.186.
 
 The script selects `direction="+"` and mode 0 for the forward output, `direction="-"` for
 the backward output, and `direction="-"` on `refl_0` for the reflection. It centres the

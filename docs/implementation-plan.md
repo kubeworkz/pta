@@ -63,7 +63,7 @@ Golden-build results (`configs/pta.yaml`, seed 7):
 | # | Design doc says | Built as | Why |
 |---|---|---|---|
 | D1 | `pf.parametric.route`, `check_min_width`, `PortSpec` helpers | PhotonForge 2.2 public API (`Component`, `Path`, `SMatrix`, `CircuitModel`, `Technology`) | Those helpers do not exist in 2.2; the layout is written against the installed API and introspected signatures |
-| D2 | Tidy3D adjoint plugin drives the core | `tidy3d_design_spec.json` (adjoint problem statement) + 4 forward verification simulators | `tidy3d.plugins.adjoint` is gone in Tidy3D 2.x; the portal runs the adjoint from the spec |
+| D2 | Tidy3D adjoint plugin drives the core | `run_design_submit_v8.py` runs the adjoint locally as an `InverseDesignMulti`; `tidy3d_design_spec.json` still records the problem statement, and 4 forward verification simulators close the loop | `tidy3d.plugins.adjoint` is gone in Tidy3D 2.x, and `tidy3d.plugins.invdes` takes one frequency per metric, so the comb is one simulation per line and input port |
 | D3 | On-chip 1×N LO splitter feeding every hybrid | Standalone 1×N MMI star coupler + GDS; LO enters each hybrid from off chip | A crossing-free on-chip fan to the hybrid column is impossible in this floorplan; the splitter is still delivered as a characterised component |
 | D4 | Fixed lane phases | Per-lane thermo-optic trimmer + pilot-tone calibration | Arbitrary lane phases alone produced 375 % MVM error; calibration brings it to 0.5 % |
 | D5 | Single DRC rule set | Two rule sets (`freeform` 140 nm on the core, `waveguide` 800/250 nm on the chip) with the core excluded via a device marker on layer (99,0) | The 140 nm freeform features are legal only inside the inverse-designed region |
@@ -119,7 +119,11 @@ First run `tidy3d_validate_straight.json` and follow
 [`tidy3d-validation.md`](tidy3d-validation.md): a straight guide must show a forward
 amplitude near unity, a weak backward direction and a linear phase slope. Only then trust
 the full-core extraction.
-1. Upload `tidy3d_design_spec.json`, run the adjoint, fetch the optimised density map.
+1. Run `run_design_submit_v8.py`. It builds the `InverseDesignMulti` (one simulation per
+   comb line and input port, each with its own mode source), optimises the mask against the
+   phase/gain-invariant overlap under the conic filter and beta schedule with the
+   erosion/dilation penalty, and writes the density, the design `SimulationData` and the
+   core GDS. `PTA_RESUME=1 PTA_START_STEP=<n>` continues the schedule from the history.
 2. Re-run the 4 `tidy3d_verify_in*.json` simulations, export each input's `(K, N)`
    output amplitudes, and assemble `core_smatrix.npz` with
    `pta import-em --density <mask.npy> --monitors <dir>` (validates the density grid,
@@ -199,7 +203,7 @@ foundry deck — sign-off must re-run the PDK's own rules and LVS on `pta_chip.g
 
 | File | Use |
 |---|---|
-| `tidy3d_design_spec.json` | Adjoint problem: stack, design region, grid, targets, filter radius, projection schedule, objective |
+| `tidy3d_design_spec.json` | Adjoint problem: stack, design region, grid, targets, conic filter radius, tanh projection and beta schedule, erosion/dilation penalty, phase-invariant objective |
 | `tidy3d_verify_in0..3.json` | Forward 3D FDTD of the exported core, one per input port; returns the S-matrix column |
 | `tidy3d_validate_straight.json` | Minimal straight waveguide on lane 0; validates monitor direction, absolute normalization and phase before the core runs |
 
