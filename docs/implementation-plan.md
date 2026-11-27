@@ -118,7 +118,9 @@ each file's purpose and portal.
 First run `tidy3d_validate_straight.json` and follow
 [`tidy3d-validation.md`](tidy3d-validation.md): a straight guide must show a forward
 amplitude near unity, a weak backward direction and a linear phase slope. Only then trust
-the full-core extraction.
+the full-core extraction. `notebooks/mode_monitor_normalization.ipynb` reproduces the
+normalization half of that check: one slab simulation compares a 2.0 µm and an 8.0 µm
+monitor on the same plane and fits the group index from the phase slope.
 1. Run `run_design_submit_v8.py`. It builds the `InverseDesignMulti` (one simulation per
    comb line and input port, each with its own mode source), optimises the mask against the
    phase/gain-invariant overlap under the conic filter and beta schedule with the
