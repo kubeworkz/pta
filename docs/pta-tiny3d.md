@@ -822,8 +822,8 @@ if __name__ == "__main__":
 To generate a **fabrication-ready, DRC-clean GDSII layout** in PhotonForge, replace the black-box rectangles with physical parametric waveguide structures:
 
 1. **Physical 3 dB Directional Coupler (180° Optical Hybrid):** Built from S-bends, a parallel coupling region with a foundry-safe gap (e.g., ≥ 250 nm for DUV SiN lithography), and a π/2 phase-offset section on the Local Oscillator (LO) arm so a directional coupler's intrinsic 90° phase shift acts as an exact 180° balanced homodyne hybrid $(E_{\text{out}} = \frac{E_{\text{sig}} \pm E_{\text{LO}}}{\sqrt{2}})$.
-2. **Physical Microring Add-Drop WDM Mux/Demux Bank:** Uses K cascaded bus-coupled racetrack resonators tuned to your comb wavelengths (λ₁ = 1545 nm, λ₂ = 1550 nm, λ₃ = 1555 nm) with minimum bend radii (R ≥ 35 μm for low radiation loss in SiN) and DRC-compliant coupling gaps.
-3. **DRC Verification & Layer Mapping:** Enforces minimum waveguide width, minimum spacing/gap, minimum bend radius, and smooth Euler/circular routing bends across your foundry PDK layer stack.
+2. **Physical Microring Add-Drop WDM Mux/Demux Bank:** Uses K cascaded bus-coupled racetrack resonators tuned to our comb wavelengths (λ₁ = 1545 nm, λ₂ = 1550 nm, λ₃ = 1555 nm) with minimum bend radii (R ≥ 35 μm for low radiation loss in SiN) and DRC-compliant coupling gaps.
+3. **DRC Verification & Layer Mapping:** Enforces minimum waveguide width, minimum spacing/gap, minimum bend radius, and smooth Euler/circular routing bends across our foundry PDK layer stack.
 
 ---
 
@@ -1125,7 +1125,7 @@ if name == "main":
 - **Automated Polygon DRC Assertions (**`check_min_width` **&** `check_min_gap`**):** Before writing the GDSII file, PhotonForge inspects all merged polygons on `LAYER_SIN_CORE` to guarantee zero lithographic pinch-offs or trench-bridging violations.
 - **Euler S-Bends & Minimum Bend Radius (**`DRC_MIN_RADIUS = 40.0` **μm):** All directional coupler transitions and `pf.parametric.route` interconnects use adiabatic Euler bends with R ≥ 40 μm to eliminate mode-mismatch loss and polarization conversion in the hybrid SiN/TFLN waveguide.
 - **Integrated Thermo-Optic Phase & Resonance Trimming (**`LAYER_HEATER`**):** Every microring resonator and every Local Oscillator (LO) input arm includes a dedicated TiN heater strip so you can lock the WDM comb resonances and calibrate $(\phi_{\text{ref}})$ post-fabrication.
-- **Inserting Your Inverse-Designed Freeform Polygons:** To drop your actual Tidy3D optimized permittivity array (`eps_grid`) directly into `FREEFORM_CORE_LAYOUT`, convert the binarized 2D mask (`projected > 0.5`) into GDS polygons using `gdstk.contour` or `skimage.measure.find_contours` and add them to `core.add(LAYER_SIN_CORE, ...)`.
+- **Inserting Our Inverse-Designed Freeform Polygons:** To drop our actual Tidy3D optimized permittivity array (`eps_grid`) directly into `FREEFORM_CORE_LAYOUT`, convert the binarized 2D mask (`projected > 0.5`) into GDS polygons using `gdstk.contour` or `skimage.measure.find_contours` and add them to `core.add(LAYER_SIN_CORE, ...)`.
 
 ---
 
@@ -1278,7 +1278,7 @@ def build_freeform_core_with_polygons(
 # EXAMPLE USAGE: LOAD SAVED PARAMS & EXPORT STANDALONE CORE GDS
 # ==============================================================================
 if __name__ == "__main__":
-    # Load your optimized 'params' array saved from Stage 1 (or generate dummy pattern for test)
+    # Load our optimized 'params' array saved from Stage 1 (or generate dummy pattern for test)
     nx, ny = int(18.0 / 0.04), int(20.0 / 0.04)
     rng = np.random.default_rng(42)
     dummy_params = gaussian_filter(rng.uniform(0, 1, size=(nx, ny)), sigma=4.5)
@@ -1495,8 +1495,8 @@ if __name__ == "__main__":
 
 ### Why This Verification Step Is Critical
 
-- **Phase Shift Compensation:** Morphological smoothing slightly alters the average fill factor of the SiN core, which can shift the global phase $\phi _{\text{ref}}$ by a few degrees. Because your PhotonForge layout includes thermo-optic phase tuners on the Local Oscillator (LO) arms, any uniform phase offset $\Delta \phi_{\text{ref}}$ is calibrated out dynamically during startup.
-- **Plug-and-Play Sign-Off:** Simply point Stage 2 (`assemble_coherent_comb.py`) to `"tidy3d_verified_gds_smatrix.npz"` instead of `"tidy3d_coherent_comb_smatrix.npz"` to verify your complete PhotonForge circuit using the exact GDSII geometry headed to the foundry.
+- **Phase Shift Compensation:** Morphological smoothing slightly alters the average fill factor of the SiN core, which can shift the global phase $\phi _{\text{ref}}$ by a few degrees. Because our PhotonForge layout includes thermo-optic phase tuners on the Local Oscillator (LO) arms, any uniform phase offset $\Delta \phi_{\text{ref}}$ is calibrated out dynamically during startup.
+- **Plug-and-Play Sign-Off:** Simply point Stage 2 (`assemble_coherent_comb.py`) to `"tidy3d_verified_gds_smatrix.npz"` instead of `"tidy3d_coherent_comb_smatrix.npz"` to verify our complete PhotonForge circuit using the exact GDSII geometry headed to the foundry.
 
 ---
 
@@ -1688,9 +1688,9 @@ if __name__ == "__main__":
 
 ---
 
-To evaluate whether your hybrid TFLN-on-SiN coherent frequency-comb tensor accelerator beats electronic AI hardware, you must link your **Tidy3D/PhotonForge optical insertion losses** to **electro-optic power budgets and receiver noise**.
+To evaluate whether our hybrid TFLN-on-SiN coherent frequency-comb tensor accelerator beats electronic AI hardware, you must link our **Tidy3D/PhotonForge optical insertion losses** to **electro-optic power budgets and receiver noise**.
 
-Below is a complete **System-Level Energy Efficiency (TOPS/W) & SNR / ENOB Calculator** tailored to your coherent homodyne WDM architecture.
+Below is a complete **System-Level Energy Efficiency (TOPS/W) & SNR / ENOB Calculator** tailored to our coherent homodyne WDM architecture.
 
 ---
 
@@ -1842,7 +1842,7 @@ if __name__ == "__main__":
 
 - **Why** $N^{2}$ **Scaling Wins:** Notice how **compute throughput scales as** $O(N^2 K)$ while **DAC/RF modulator energy scales only as** $O(N K)$. Moving from a 4 × 4 prototype to a 16 × 16 or 32 × 32 freeform core amortizes the high-speed DAC, ADC, and TFLN RF drive power across $N^{2}$ multiply-accumulates, pushing efficiency from ~1–2 TOPS/W in small prototypes to **> 15–30 TOPS/W** at scale.
 - **Homodyne Gain Boosts ENOB:** Increasing `lo_to_sig_power_ratio_db` amplifies the balanced signal current $(I_{\text{sig}} \propto \sqrt{P_{\text{sig}} P_{\text{LO}}})$, lifting the signal well above the electronic TIA thermal noise floor (`tia_noise_pa_sqrt_hz`) to achieve **6–8 bits ENOB**—sufficient for quantized INT8 / FP8 AI inference workloads without retraining.
-- **Reducing RF Drive Power:** Terminating traveling-wave TFLN electrodes into 50 Ω burns steady-state power $(V_{\text{rms}}^2 / 50\,\Omega)$. Using **capacitive segmented slow-wave electrodes** on your TFLN modulators reduces RF drive energy to $CV^{2}f_{\text{baud}}$, cutting modulator power by more than 5×.
+- **Reducing RF Drive Power:** Terminating traveling-wave TFLN electrodes into 50 Ω burns steady-state power $(V_{\text{rms}}^2 / 50\,\Omega)$. Using **capacitive segmented slow-wave electrodes** on our TFLN modulators reduces RF drive energy to $CV^{2}f_{\text{baud}}$, cutting modulator power by more than 5×.
 
 ---
 
@@ -2593,7 +2593,7 @@ tfln_sin_tensor_accelerator/
 
 #### 1. `tests/conftest.py`
 
-Creates fast, deterministic test fixtures using temporary directories (`tmp_path_factory`) so CI runs stay completely isolated from your `artifacts/` folder.
+Creates fast, deterministic test fixtures using temporary directories (`tmp_path_factory`) so CI runs stay completely isolated from our `artifacts/` folder.
 
 ```python
 import numpy as np
@@ -2792,7 +2792,7 @@ def test_system_metrics_physical_bounds(test_cfg: AcceleratorConfig):
 
 #### 5. `.github/workflows/ci.yml`
 
-Add `pytest>=7.4` to `pyproject.toml` optional dev dependencies and configure GitHub Actions to run your test suite automatically on every push or pull request:
+Add `pytest>=7.4` to `pyproject.toml` optional dev dependencies and configure GitHub Actions to run our test suite automatically on every push or pull request:
 
 ```plaintext
 name: Photonic Accelerator CI
@@ -2846,7 +2846,7 @@ Adding a **Pareto frontier sweep script (**`sweep_pareto.py`**)** lets you ident
 
 #### `sweep_pareto.py` (Pareto Frontier & Design-Space Optimizer)
 
-Place `sweep_pareto.py` at the root of your `tfln_sin_tensor_accelerator/` repository alongside `run_pipeline.py`:
+Place `sweep_pareto.py` at the root of our `tfln_sin_tensor_accelerator/` repository alongside `run_pipeline.py`:
 
 ```python
 import itertools
@@ -3021,7 +3021,7 @@ python sweep_pareto.py
 - **Sweet Spot for AI Inference:** You will typically see **N = 16 or N = 32** with **K = 8 or 16 comb lines** at **~1.5–4 mW per comb line** land right on the Pareto knee - delivering **> 6.5 bits ENOB** (ideal for INT8/FP8 quantized weights) at **20–45 TOPS/W** total wall-plug efficiency.
 - **Checking our Current Prototype:**
 
-  Look at the `4x4` cluster on the plot to see how much extra optical power or TIA noise reduction is needed on your first test chip to hit your target inference bit-width before scaling the reticle to `16x16`.
+  Look at the `4x4` cluster on the plot to see how much extra optical power or TIA noise reduction is needed on our first test chip to hit our target inference bit-width before scaling the reticle to `16x16`.
 
 ---
 
@@ -3054,7 +3054,7 @@ from tidy3d.plugins.mode import ModeSolver
 @dataclass
 class FoundryPDKProfile:
     name: str = "Hybrid_SiN_TFLN_MPW"
-    # GDSII (layer, datatype) table — update to match your foundry DRM
+    # GDSII (layer, datatype) table — update to match our foundry DRM
     sin_waveguide: tuple[int, int] = (30, 0)     # Full-etch 300 nm SiN core
     sin_slab_partial: tuple[int, int] = (31, 0)  # Shallow-etch SiN (optional)
     tfln_bonded_mesa: tuple[int, int] = (40, 0)  # Bonded X-cut TFLN active window
@@ -3250,8 +3250,8 @@ def compute_tfln_vpi_l_tidy3d(
 
 ### How to Wire These Into Our Pipeline
 
-1. **Swap PDK Layers:** Instantiate `pdk = FoundryPDKProfile(...)` with our foundry's exact GDS layer table (e.g., AIM Photonics, Ligentec, or HyperLight/CSEM) and pass `pdk.sin_waveguide`, `pdk.tfln_bonded_mesa`, `pdk.tin_heater`, and `pdk.rf_electrode_m1` into `AcceleratorConfig`. Also place `pdk.drc_exclude_box` over your `FREEFORM_CORE_LAYOUT` bounding box so automated foundry CMP dummy-fill scripts do not drop metal/nitride tiles inside your inverse-designed scatterer.
-2. **Load Your Real Model Layer:** In `stage1_inverse_design.py`, replace `cfg.generate_target_matrices()` with:
+1. **Swap PDK Layers:** Instantiate `pdk = FoundryPDKProfile(...)` with our foundry's exact GDS layer table (e.g., AIM Photonics, Ligentec, or HyperLight/CSEM) and pass `pdk.sin_waveguide`, `pdk.tfln_bonded_mesa`, `pdk.tin_heater`, and `pdk.rf_electrode_m1` into `AcceleratorConfig`. Also place `pdk.drc_exclude_box` over our `FREEFORM_CORE_LAYOUT` bounding box so automated foundry CMP dummy-fill scripts do not drop metal/nitride tiles inside our inverse-designed scatterer.
+2. **Load Our Real Model Layer:** In `stage1_inverse_design.py`, replace `cfg.generate_target_matrices()` with:
 
 ```python
 W_tiles, digital_scales = load_quantized_layer_weights(my_torch_layer.weight.detach().numpy(), N=cfg.N, K=cfg.K, target_bits=8)

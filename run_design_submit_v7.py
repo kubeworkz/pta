@@ -1,0 +1,126 @@
+import sys, time, os
+sys.path.insert(0, "src")
+from pathlib import Path
+from pta.config import load_config
+from pta.core import build_core, surrogate_density
+
+cfg_path = Path.home() / ".config" / "tidy3d" / "config.toml"
+import tomllib
+toml = tomllib.loads(cfg_path.read_text(encoding="utf-8"))
+os.environ["TIDY3D_API_KEY"] = toml["web"]["apikey"]
+
+import numpy as np
+import tidy3d as td
+import tidy3d.web as web
+import tidy3d.plugins.invdes as tdi
+from tidy3d.plugins.expressions.metrics import ModePower
+from tidy3d.plugins.expressions.operators import Add
+
+cfg = load_config()
+core_analytic = build_core(cfg)
+print("cfg.N=", cfg.N, "cfg.K=", cfg.K, "nx=", cfg.nx, "ny=", cfg.ny)
+print("NOTE: this installed tidy3d.invdes metric only supports a single frequency.")
+print("Running a single-line adjoint at the central comb freq to document the path.")
+center_freq = float(cfg.freqs_hz.mean())
+print("center comb freq (Hz):", center_freq, " (lambda um:", 299792458.0/center_freq*1e6, ")")
+
+output_monitors = [
+    td.ModeMonitor(
+        center=(cfg.design_lx / 2 + 1.0, cfg.port_y(k), 0.0),
+        size=(0.0, 2.0, cfg.t_sin + 1.5),
+        freqs=[center_freq],
+        mode_spec=td.ModeSpec(num_modes=1),
+        name=f"out_{k}",
+    )
+    for k in range(cfg.N)
+]
+output_monitor_names = tuple(f"out_{k}" for k in range(cfg.N))
+
+metrics = [
+    ModePower(
+        monitor_name=f"out_{out_k}",
+        freqs=center_freq,
+        direction="+",
+        mode_index=0,
+    )
+    for out_k in range(cfg.N)
+]
+
+def add_tree(exprs):
+    if len(exprs) == 1:
+        return exprs[0]
+    mid = len(exprs) // 2
+    left = add_tree(exprs[:mid])
+    right = add_tree(exprs[mid:])
+    return Add(left=left, right=right)
+
+metric = add_tree(metrics)
+print("built metric tree")
+
+design_region = tdi.TopologyDesignRegion(
+    size=(cfg.design_lx, cfg.design_ly, cfg.t_sin),
+    center=(0.0, 0.0, 0.0),
+    eps_bounds=(cfg.n_sio2**2, cfg.n_sin**2),
+    pixel_size=cfg.dl_opt,
+)
+base = td.Simulation(
+    size=(cfg.design_lx + 4.0, cfg.design_ly + 4.0, 2.8),
+    run_time=500.0 / center_freq,
+    grid_spec=td.GridSpec.uniform(dl=cfg.dl_opt),
+    medium=td.Medium(permittivity=cfg.n_sio2**2),
+    boundary_spec=td.BoundarySpec.all_sides(td.PML()),
+    monitors=output_monitors,
+    plot_length_units="um",
+    shutoff=1e-5,
+)
+design = tdi.InverseDesign(
+    design_region=design_region,
+    task_name="pta_P6_single_line",
+    simulation=base,
+    metric=metric,
+    output_monitor_names=output_monitor_names,
+)
+print("built InverseDesign (single-line); output_monitor_names=", output_monitor_names)
+
+initial_density = surrogate_density(cfg)
+params = initial_density.astype(float)[:, :, None]
+print("initial density shape=", params.shape, "min/max=", float(params.min()), float(params.max()))
+
+result = tdi.InverseDesignResult(design=design, params=(params,))
+print("built InverseDesignResult; sim_last type=", type(result.sim_last))
+
+job = web.Job(simulation=result.sim_last, task_name="pta_P6_single_line")
+print("estimate:", job.estimate_cost())
+job.upload()
+print("uploaded")
+job.start()
+print("started")
+
+out_path = cfg.path("tidy3d") / "tidy3d_design_result_single_line.hdf5"
+downloaded = None
+for attempt in range(12):
+    try:
+        downloaded = job.load(path=str(out_path))
+        print(f"downloaded on attempt {attempt+1}")
+        break
+    except Exception as exc:
+        print(f"download attempt {attempt+1} failed: {exc}")
+        time.sleep(15)
+
+if downloaded is None:
+    raise RuntimeError("could not download tidy3d_design_result_single_line.hdf5")
+
+print("loaded design result type:", type(downloaded))
+print("has sim_last:", hasattr(downloaded, "sim_last"))
+if hasattr(downloaded, "sim_last"):
+    sl = downloaded.sim_last
+    print("sim_last type:", type(sl))
+    if hasattr(sl, "structures"):
+        names = [getattr(s, "name", None) for s in sl.structures]
+        print("sim_last.structure names:", names)
+        for s in sl.structures:
+            m = getattr(s, "medium", None)
+            if isinstance(m, (td.CustomMedium, td.CustomAnisotropicMedium)):
+                print("  custom medium structure:", getattr(s, "name", None), "type:", type(m))
+
+print("DONE")

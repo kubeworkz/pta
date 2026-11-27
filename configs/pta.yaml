@@ -1,0 +1,72 @@
+# Golden build configuration for the coherent frequency-comb photonic tensor accelerator.
+# Every stage of the pipeline reads this file; override with `--set key=value` on the CLI.
+
+# --- Matrix and comb dimensions ---------------------------------------------
+N: 4                        # N x N freeform tensor core
+wavelengths_um: [1.545, 1.550, 1.555]   # K = 3 ITU grid comb lines
+alpha_scale: 0.45           # passive per-element field amplitude of the optimized core
+seed: 7
+
+# --- Hybrid TFLN-on-SiN stack (um) ------------------------------------------
+fiber_pitch: 127.0          # MZM stack and fiber-array pitch
+t_sin: 0.300
+t_gap: 0.050
+t_tfln: 0.300
+n_sio2: 1.444
+n_sin: 1.980
+n_tfln_o: 2.211
+n_tfln_e: 2.138
+wg_width: 0.800
+
+# --- Freeform design region (um) --------------------------------------------
+design_lx: 18.0
+design_ly: 20.0
+port_pitch: 4.0
+stub_len: 1.5
+stub_landing_max_um: 6.0    # surrogate fill: how far an access stub may run to find an island
+stub_landing_em_max_um: 0.6 # ingested Tidy3D core: a real design must meet its port here
+dl_opt: 0.040               # 40 nm adjoint grid, 20 nm for verification
+feature_sigma_um: 0.500     # correlation length of the surrogate freeform fill (above the 140 nm rule)
+core_loss_db: 0.35          # estimated propagation + scattering loss of the core
+
+# --- Foundry DRC (um) -------------------------------------------------------
+drc_min_width: 0.800
+drc_min_gap: 0.250
+drc_min_feature: 0.140
+drc_min_radius: 40.0
+drc_tolerance_um2: 0.01
+drc_defect_threshold_um2: 0.2  # a defect smaller than this is morphological rounding noise
+drc_freeform_um: 0.14           # minimum feature of the inverse-designed core
+
+# --- GDS layer map (layer, datatype) ----------------------------------------
+layers:
+  sin_core: [1, 0]
+  tfln_slab: [2, 0]
+  heater: [10, 0]
+  rf_metal: [12, 0]
+  oxide_open: [70, 0]
+  exclude: [99, 0]            # device marker around the freeform core
+
+# --- Electro-optic and link parameters --------------------------------------
+v_pi_l: 2.5                 # V*cm at 1550 nm for the TFLN push-pull MZM
+mod_length_mm: 5.0
+mod_insertion_db: 1.5
+waveguide_loss_db_cm: 0.3
+responsivity: 0.85          # A/W
+taper_loss_db: 0.08         # TFLN -> SiN bilayer taper
+mux_loss_db: 0.60           # per-lane microring mux excess loss
+hybrid_excess_db: 0.20      # 3 dB coupler excess loss
+lo_boost_db: 6.0            # LO comb power relative to signal comb
+ring_radius_um: 12.0        # microring radius (FSR ~ 17 nm, clears the 10 nm comb span)
+ring_q: 20000.0             # loaded quality factor of the add-drop rings
+
+# --- System model -----------------------------------------------------------
+baud_ghz: 25.0
+laser_mw_per_line: 4.0
+laser_wpe: 0.20
+tia_noise_pa_sqrt_hz: 12.0
+rin_db_hz: -145.0
+temperature_k: 300.0
+
+# --- Output -----------------------------------------------------------------
+artifacts_dir: artifacts
