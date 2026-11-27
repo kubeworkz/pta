@@ -132,6 +132,9 @@ Before the full-core solve, upload `tidy3d/tidy3d_validate_straight.json` and wo
 [`docs/tidy3d-validation.md`](docs/tidy3d-validation.md): a straight guide must show a
 forward amplitude near 1, a weak backward direction and a linear phase slope. Run
 `python -m pta.validate_straight <result.hdf5>` for the numeric report.
+`notebooks/mode_monitor_normalization.ipynb` reproduces the normalization part of that report:
+one slab simulation compares a 2.0 µm and an 8.0 µm monitor on the same plane and fits the
+group index from the phase slope.
 
 ## Artifacts (`artifacts/`, zipped into `dist/pta_portal_bundle.zip`)
 
