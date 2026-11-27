@@ -111,6 +111,19 @@ PTA_ESTIMATE_ONLY=1 python run_design_submit_v8.py   # cost estimate, no solve
 PTA_RESUME=1 PTA_START_STEP=4 PTA_STEPS=36 python run_design_submit_v8.py   # continue the schedule
 ```
 
+**Cost.** One epoch bills about **3.9 FlexCredits** (12 simulations at ~0.32 each, adjoint
+solve included) and each verification simulation about **1.4**, so the full 40-epoch
+schedule plus the four verification runs is roughly **160 credits**. `PTA_ESTIMATE_ONLY=1`
+reports only the forward upload of one task (0.074) and understates an epoch by about 4×;
+treat 3.9 as the planning number.
+
+**When the balance runs out**, the API rejects the next task submit with HTTP 400 / code
+`4000000009` ("You do not have enough FlexCredits … Balance is X, Y is reserved … expected
+to cost Z"). The optimizer aborts and the script exits non-zero. No density, GDS or
+verification artifact is written by that attempt — those are produced after the loop — but
+the epochs that did finish are in `artifacts/tidy3d/design_v8_history.hdf5`. Top up and
+continue with `PTA_RESUME=1 PTA_START_STEP=<completed epochs + 1>`.
+
 Before the full-core solve, upload `tidy3d/tidy3d_validate_straight.json` and work through
 [`docs/tidy3d-validation.md`](docs/tidy3d-validation.md): a straight guide must show a
 forward amplitude near 1, a weak backward direction and a linear phase slope. Run
