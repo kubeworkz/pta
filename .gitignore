@@ -9,3 +9,4 @@ dist/
 .env
 *.hdf5
 *.h5
+two_line_checkpoints/
