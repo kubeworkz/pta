@@ -13,6 +13,7 @@ from pta.t3d import (
     design_initial_density,
     design_spec,
     design_tasks,
+    save_epoch_results,
     validate_design,
     write_straight_validation_spec,
 )
@@ -236,6 +237,31 @@ def test_projected_initial_density_keeps_every_port_connected(cfg):
 
     assert len(landings) == 2 * cfg.N
     assert max(landings.values()) <= cfg.stub_landing_em_max_um
+
+
+def test_save_epoch_results_writes_one_file_per_task(tmp_path):
+    simulation = td.Simulation(
+        size=(2.0, 2.0, 1.0),
+        run_time=1e-12,
+        grid_spec=td.GridSpec.uniform(dl=0.2),
+        boundary_spec=td.BoundarySpec.all_sides(td.PML()),
+        sources=[],
+    )
+    batch = {
+        f"pta_core_{index}": td.SimulationData(simulation=simulation, data=())
+        for index in range(3)
+    }
+
+    written = save_epoch_results(batch, tmp_path / "epoch_01")
+
+    assert [path.name for path in written] == [
+        "pta_core_0.hdf5",
+        "pta_core_1.hdf5",
+        "pta_core_2.hdf5",
+    ]
+    assert all(path.exists() and path.stat().st_size > 0 for path in written)
+    loaded = td.SimulationData.from_file(str(written[0]))
+    assert loaded.simulation.size == simulation.size
 
 
 def test_validate_design_names_the_source_free_task():

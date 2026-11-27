@@ -74,6 +74,31 @@ if os.environ.get("PTA_RESUME") == "1":
 else:
     result = None
 
+epoch_root = tidy3d_dir / "epochs"
+
+
+def epoch_saver(epoch: int):
+    """Persist one epoch's SimulationData before the optimizer discards it.
+
+    ``run_async`` keeps the results in memory and Tidy3D does not serve them afterwards, so
+    without this the forward fields of every epoch are lost once the step returns.
+    """
+
+    def save(_result, step_index=None, aux_data=None):
+        batch = (aux_data or {}).get("sim_data")
+        if not batch:
+            print(f"  epoch {epoch}: no SimulationData handed back, nothing saved", flush=True)
+            return
+        written = t3d.save_epoch_results(batch, epoch_root / f"epoch_{epoch:02d}")
+        print(
+            f"  epoch {epoch}: saved {len(written)} result(s) under "
+            f"{epoch_root / f'epoch_{epoch:02d}'}",
+            flush=True,
+        )
+
+    return save
+
+
 # The spec's beta schedule is one beta per epoch, so each step rebuilds the design region
 # at its own projection steepness rather than running one fixed beta.
 started = time.time()
@@ -92,7 +117,12 @@ for offset in range(steps):
         result = tdi.InverseDesignResult(
             design=design, opt_state=(state,), params=(params0,)
         )
-    result = step_optimizer.continue_run(result=result, num_steps=1, post_process_fn=objective)
+    result = step_optimizer.continue_run(
+        result=result,
+        num_steps=1,
+        post_process_fn=objective,
+        callback=epoch_saver(start_step + offset),
+    )
     print(
         f"step {start_step + offset} beta={beta:.3f} "
         f"objective={float(result.objective_fn_val[-1]):.4f} "

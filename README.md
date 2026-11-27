@@ -117,6 +117,10 @@ schedule plus the four verification runs is roughly **160 credits**. `PTA_ESTIMA
 reports only the forward upload of one task (0.074) and understates an epoch by about 4×;
 treat 3.9 as the planning number.
 
+Each epoch's per-task `SimulationData` is written to
+`artifacts/tidy3d/epochs/epoch_NN/` as the step finishes (about 22 MB per epoch), because
+those results are not retrievable from the portal afterwards.
+
 **When the balance runs out**, the API rejects the next task submit with HTTP 400 / code
 `4000000009` ("You do not have enough FlexCredits … Balance is X, Y is reserved … expected
 to cost Z"). The optimizer aborts and the script exits non-zero. No density, GDS or

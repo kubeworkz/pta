@@ -463,6 +463,28 @@ def design_density(cfg: AcceleratorConfig, result, design=None) -> np.ndarray:
     return np.clip(density, 0.0, 1.0)
 
 
+def save_epoch_results(sim_data, directory: str | Path) -> list[Path]:
+    """Write one optimizer epoch's per-task ``SimulationData`` to disk.
+
+    The optimizer's ``BatchData`` exists only in memory for the duration of a step, and the
+    per-task results behind it are not retrievable from Tidy3D afterwards (the adjoint tasks
+    in particular return 404 once the run is over). The optimizer callback hands them back
+    through ``aux_data["sim_data"]``, so they are written here instead of being dropped.
+
+    ``sim_data`` is either the ``{task_name: SimulationData}`` mapping the callback provides
+    or a single ``SimulationData``. Returns the files written.
+    """
+    directory = Path(directory)
+    directory.mkdir(parents=True, exist_ok=True)
+    items = list(sim_data.items()) if hasattr(sim_data, "items") else [(None, sim_data)]
+    written: list[Path] = []
+    for name, data in items:
+        path = directory / (f"{name}.hdf5" if name else "simulation.hdf5")
+        data.to_file(str(path))
+        written.append(path)
+    return written
+
+
 def write_design_data(cfg: AcceleratorConfig, design, result, path: str | Path) -> Path:
     """Write the optimised design as a ``SimulationData`` for ``pta import-em``.
 
